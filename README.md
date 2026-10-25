@@ -6,13 +6,13 @@ Projet de fin d'études.
 
 Comment ça marche
                  Indexation (à l'ajout d'un document)
- PDF / Word / texte ──▶ extraction ──▶ découpage en passages ──▶ embeddings (bge-m3) ──▶ PostgreSQL + pgvector
+ PDF / Word / texte ──> extraction ──> découpage en passages ──> embeddings (bge-m3) ──> PostgreSQL + pgvector
 
                  Question d'un employé
- question ──▶ embedding ──▶ recherche des 5 passages les plus proches
+ question ──> embedding ──> recherche des 5 passages les plus proches
                             (filtrés selon le département de l'employé)
-          ──▶ score trop faible ? ──▶ « je ne sais pas » + question enregistrée comme trou
-          ──▶ sinon LLM avec les passages numérotés ──▶ réponse citée [1] [2] + sources
+          ──> score trop faible ? ──> « je ne sais pas » + question enregistrée comme trou
+          ──> sinon LLM avec les passages numérotés ──> réponse citée [1] [2] + sources
 C'est le principe du RAG (Retrieval-Augmented Generation). Le modèle répond avec les passages retrouvés dans les documents de l'entreprise, pas avec ce qu'il a appris pendant son entraînement.
 
 Fonctionnalités
