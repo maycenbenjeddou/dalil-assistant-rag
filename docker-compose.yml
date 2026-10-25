@@ -1,0 +1,61 @@
+name: dalil
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dalil}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dalil}
+      POSTGRES_DB: ${POSTGRES_DB:-dalil}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dalil}"]
+      interval: 5s
+      retries: 10
+
+  # Pulls the models on first start (about 3 GB), then serves them.
+  ollama:
+    image: ollama/ollama:0.5.7
+    entrypoint:
+      - /bin/sh
+      - -c
+      - ollama serve & sleep 3 && ollama pull ${EMBED_MODEL:-bge-m3} && ollama pull ${CHAT_MODEL:-qwen2.5:3b} && wait
+    volumes:
+      - ollama:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama show ${CHAT_MODEL:-qwen2.5:3b} >/dev/null 2>&1"]
+      interval: 15s
+      retries: 200
+      start_period: 30s
+
+  backend:
+    build: ./backend
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-dalil}:${POSTGRES_PASSWORD:-dalil}@postgres:5432/${POSTGRES_DB:-dalil}
+      OLLAMA_URL: http://ollama:11434
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  pgdata:
+  ollama:
+  uploads:
